@@ -21,7 +21,7 @@ See `ARCHITECTURE.md` for details.
 - [x] Web: Send page (text box, mode toggle, TTL picker, PIN + countdown), Receive page
 
 ## 3. Connect Google Drive
-- [ ] `services/crypto.ts`: AES-256-GCM encrypt/decrypt (with tests)
+- [x] `services/crypto.ts`: AES-256-GCM encrypt/decrypt (with tests)
 - [ ] `/auth/google/drive` + callback: store the token, set expiry, create/verify the app folder
 - [ ] `services/tokens.ts`: get access token (cached in Redis); `invalid_grant` → mark disconnected
 - [ ] `GET /api/drive/token`, `POST /api/drive/disconnect`
