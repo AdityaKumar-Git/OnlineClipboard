@@ -1,0 +1,62 @@
+// Data model — see docs/ARCHITECTURE.md §4.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  googleSub            String    @unique
+  email                String
+  name                 String?
+  driveConnected       Boolean   @default(false)
+  driveRefreshTokenEnc String? // AES-256-GCM: iv:authTag:ciphertext (base64)
+  driveFolderId        String?
+  driveConnectedAt     DateTime?
+  driveTokenExpiresAt  DateTime? // null = no known expiry (production mode)
+  createdAt            DateTime  @default(now())
+  shares               Share[]
+}
+
+enum ShareKind {
+  TEXT
+  FILE
+}
+
+enum ShareMode {
+  TEMP
+  HISTORY
+}
+
+enum ShareStatus {
+  ACTIVE
+  DELETED
+  DELETE_FAILED
+}
+
+model Share {
+  id           String      @id @default(uuid())
+  ownerId      String
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  kind         ShareKind
+  textContent  String? // TEXT only
+  driveFileId  String? // FILE only
+  fileName     String?
+  mimeType     String?
+  sizeBytes    BigInt?
+  pin          String // kept for display in History; uniqueness is enforced in Redis
+  mode         ShareMode
+  pinExpiresAt DateTime
+  deleteAfter  DateTime? // TEMP: = pinExpiresAt; HISTORY: null
+  status       ShareStatus @default(ACTIVE)
+  createdAt    DateTime    @default(now())
+  deletedAt    DateTime?
+
+  @@index([ownerId, createdAt])
+  @@index([status, deleteAfter])
+}
