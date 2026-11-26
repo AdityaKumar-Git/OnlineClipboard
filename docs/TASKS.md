@@ -5,12 +5,9 @@ See `ARCHITECTURE.md` for details.
 
 ## 0. Setup
 - [x] Create `/server` (Express + TS) and `/web` (Vite + React + TS), with ESLint and Prettier
-- [ ] `docker-compose.yml` with Postgres and Redis; `.env` from `.env.example`
-  _(files in place; pending manual check: `docker compose up -d`, Docker not installed yet)_
-- [ ] Prisma set up with the schema from ARCHITECTURE §4; first migration
-  _(schema + migration `20261127000000_init` generated; pending: `npm run db:migrate` against Postgres)_
-- [ ] `lib/redis.ts`, `lib/prisma.ts`, health endpoint `GET /api/health` (checks DB + Redis)
-  _(code + tests done, 503 path checked manually; pending: manual 200 check with services running)_
+- [x] `docker-compose.yml` with Postgres and Redis; `.env` from `.env.example`
+- [x] Prisma set up with the schema from ARCHITECTURE §4; first migration
+- [x] `lib/redis.ts`, `lib/prisma.ts`, health endpoint `GET /api/health` (checks DB + Redis)
 
 ## 1. Sign-in
 - [ ] Google sign-in (`/auth/google`, callback), user upsert by `googleSub`
