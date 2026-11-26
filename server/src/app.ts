@@ -6,6 +6,7 @@ import { authRouter } from './routes/auth.js';
 import { meRouter } from './routes/me.js';
 import { sharesRouter } from './routes/shares.js';
 import { receiveRouter } from './routes/receive.js';
+import { driveRouter } from './routes/drive.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { createRedisSessionStore, sessionMiddleware } from './middleware/session.js';
 
@@ -31,6 +32,7 @@ export function createApp(options: AppOptions = {}) {
   app.use('/auth', authRouter);
   app.use('/api/me', meRouter);
   app.use('/api/shares', sharesRouter);
+  app.use('/api/drive', driveRouter);
 
   app.use(notFound);
   app.use(errorHandler);

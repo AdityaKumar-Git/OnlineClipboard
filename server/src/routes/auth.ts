@@ -1,7 +1,17 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env.js';
-import { createOAuthState, getSignInUrl, stateMatches, verifySignInCode } from '../services/googleAuth.js';
+import {
+  createOAuthState,
+  exchangeDriveCode,
+  getDriveConnectUrl,
+  getSignInUrl,
+  stateMatches,
+  verifySignInCode,
+} from '../services/googleAuth.js';
+import { connectDrive } from '../services/drive.js';
+import { AppError } from '../lib/errors.js';
+import { prisma } from '../lib/prisma.js';
 import { upsertUserFromGoogle } from '../services/users.js';
 import { SESSION_COOKIE, destroySession, regenerateSession, saveSession } from '../middleware/session.js';
 
@@ -50,6 +60,58 @@ authRouter.get('/google/callback', async (req, res) => {
   } catch (err) {
     console.error('[auth] sign-in failed:', err instanceof Error ? err.message : 'unknown error');
     return res.redirect(webRedirect('/login', 'signin_failed'));
+  }
+});
+
+/** GET /auth/google/drive: connect or reconnect Drive (drive.file only). Needs a signed-in user. */
+authRouter.get('/google/drive', async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.redirect(webRedirect('/login'));
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (!user) return res.redirect(webRedirect('/login'));
+
+  const state = createOAuthState();
+  req.session.driveOauthState = state;
+  await saveSession(req);
+  res.redirect(getDriveConnectUrl(state, user.email));
+});
+
+/** Drive-connect errors land on the Send page as `?drive_error=<code>`. */
+function driveRedirect(error?: string) {
+  const url = new URL('/', env.WEB_ORIGIN);
+  url.searchParams.set(error ? 'drive_error' : 'drive', error ?? 'connected');
+  return url.toString();
+}
+
+/** GET /auth/google/drive/callback: store the encrypted refresh token and set up the app folder. */
+authRouter.get('/google/drive/callback', async (req, res) => {
+  const parsed = callbackQuery.safeParse(req.query);
+  const expectedState = req.session.driveOauthState;
+  delete req.session.driveOauthState;
+  const userId = req.session.userId;
+
+  if (!userId) return res.redirect(webRedirect('/login'));
+  if (!parsed.success) return res.redirect(driveRedirect('connect_failed'));
+  if ('error' in parsed.data) {
+    await saveSession(req);
+    return res.redirect(driveRedirect('access_denied'));
+  }
+  if (!stateMatches(expectedState, parsed.data.state)) {
+    await saveSession(req);
+    return res.redirect(driveRedirect('state_mismatch'));
+  }
+
+  try {
+    const grant = await exchangeDriveCode(parsed.data.code);
+    await connectDrive(userId, grant);
+    await saveSession(req);
+    return res.redirect(driveRedirect());
+  } catch (err) {
+    const code = err instanceof AppError ? err.code.toLowerCase() : 'connect_failed';
+    // Message only: googleapis errors can carry token requests.
+    console.error('[auth] drive connect failed:', err instanceof Error ? err.message : 'unknown error');
+    await saveSession(req).catch(() => {});
+    return res.redirect(driveRedirect(code));
   }
 });
 

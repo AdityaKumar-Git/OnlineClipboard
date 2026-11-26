@@ -20,6 +20,7 @@ const { createApp } = await import('../src/app.js');
 
 const WEB = 'http://localhost:5173';
 const USER = { id: 'user-1', email: 'alice@example.com', name: 'Alice' };
+const USER_ROW = { ...USER, driveConnected: false, driveTokenExpiresAt: null };
 
 function newAgent() {
   return request.agent(createApp({ sessionStore: new session.MemoryStore() }));
@@ -52,7 +53,7 @@ describe('Google sign-in', () => {
   it('signs the user in on a valid callback, and /api/me returns them', async () => {
     verifySignInCode.mockResolvedValue({ sub: 'google-sub-1', email: USER.email, name: USER.name });
     upsert.mockResolvedValue({ id: USER.id });
-    findUnique.mockResolvedValue(USER);
+    findUnique.mockResolvedValue(USER_ROW);
     const agent = newAgent();
     const { state } = await startSignIn(agent);
 
@@ -70,7 +71,7 @@ describe('Google sign-in', () => {
 
     const me = await agent.get('/api/me');
     expect(me.status).toBe(200);
-    expect(me.body).toEqual(USER);
+    expect(me.body).toEqual({ ...USER, drive: { connected: false, expiresAt: null, reconnectSoon: false } });
     expect(findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: USER.id } }));
   });
 
@@ -139,7 +140,7 @@ describe('GET /api/me', () => {
     await agent.get('/auth/google/callback').query({ code: 'c', state });
 
     expect((await agent.get('/api/me')).status).toBe(401);
-    findUnique.mockResolvedValue(USER);
+    findUnique.mockResolvedValue(USER_ROW);
     expect((await agent.get('/api/me')).status).toBe(401);
   });
 });
@@ -150,7 +151,7 @@ describe('POST /auth/logout', () => {
   it('ends the session', async () => {
     verifySignInCode.mockResolvedValue({ sub: 's', email: USER.email, name: USER.name });
     upsert.mockResolvedValue({ id: USER.id });
-    findUnique.mockResolvedValue(USER);
+    findUnique.mockResolvedValue(USER_ROW);
     const agent = newAgent();
     const { state } = await startSignIn(agent);
     await agent.get('/auth/google/callback').query({ code: 'c', state });

@@ -6,5 +6,7 @@ declare module 'express-session' {
     userId?: string;
     /** CSRF `state` for the OAuth round-trip in progress. */
     oauthState?: string;
+    /** CSRF `state` for the Drive-connect round-trip in progress. */
+    driveOauthState?: string;
   }
 }
