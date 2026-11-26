@@ -43,9 +43,7 @@ const envSchema = z.object({
 
   MAX_FILE_SIZE_MB: z.coerce.number().int().positive().default(100),
   MAX_TEXT_KB: z.coerce.number().int().positive().default(100),
-  PIN_RATE_LIMIT: z.coerce.number().int().positive().default(10),
-  PIN_TTL_MIN_MINUTES: z.coerce.number().int().positive().default(5),
-  PIN_TTL_MAX_MINUTES: z.coerce.number().int().positive().default(15),
+  PIN_RATE_LIMIT: z.coerce.number().int().positive().default(100),
 });
 
 export type Env = z.infer<typeof envSchema>;

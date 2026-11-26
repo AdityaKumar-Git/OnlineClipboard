@@ -6,7 +6,15 @@ import { prisma } from '../lib/prisma.js';
 import { releasePin, reservePin } from './pin.js';
 
 const shareMode = z.enum(['TEMP', 'HISTORY']);
-const ttlMinutes = z.number().int().min(env.PIN_TTL_MIN_MINUTES).max(env.PIN_TTL_MAX_MINUTES);
+/** The only PIN lifetimes a share can have (the Send page offers exactly these). */
+export const PIN_TTL_OPTIONS_MINUTES = [1, 2, 5, 10, 15] as const;
+
+const ttlMinutes = z
+  .number()
+  .int()
+  .refine((v) => (PIN_TTL_OPTIONS_MINUTES as readonly number[]).includes(v), {
+    message: `must be one of ${PIN_TTL_OPTIONS_MINUTES.join(', ')}`,
+  });
 
 const textShareBody = z.object({
   kind: z.literal('text'),

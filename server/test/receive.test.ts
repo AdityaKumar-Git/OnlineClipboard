@@ -86,12 +86,12 @@ describe('PIN rate limit', () => {
   beforeEach(() => m.redis.flush());
   afterEach(() => vi.resetAllMocks());
 
-  it('allows PIN_RATE_LIMIT (10) lookups per IP, then answers 429 with Retry-After', async () => {
+  it('allows PIN_RATE_LIMIT (100) lookups per IP, then answers 429 with Retry-After', async () => {
     const pin = await reservePin('share-5', 600);
     m.findUnique.mockResolvedValue(textShare('x'));
     const agent = app();
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 100; i++) {
       // Mix of right and wrong PINs: every attempt counts.
       const res = await agent.get(`/api/receive/${i % 2 ? pin : 'ZZZZZZ'}`);
       expect(res.status).not.toBe(429);
@@ -105,20 +105,20 @@ describe('PIN rate limit', () => {
   });
 
   it('counts per IP in rl:pin:{ip} with a 10-minute window', async () => {
-    for (let i = 0; i < 10; i++) expect((await hitPinRateLimit('1.1.1.1')).allowed).toBe(true);
+    for (let i = 0; i < 100; i++) expect((await hitPinRateLimit('1.1.1.1')).allowed).toBe(true);
     expect((await hitPinRateLimit('1.1.1.1')).allowed).toBe(false);
     expect((await hitPinRateLimit('2.2.2.2')).allowed).toBe(true);
     expect(await m.redis.ttl('rl:pin:1.1.1.1')).toBe(PIN_RATE_WINDOW_SECONDS);
   });
 
   it('allows lookups again once the window has passed', async () => {
-    for (let i = 0; i < 11; i++) await hitPinRateLimit('3.3.3.3');
+    for (let i = 0; i < 101; i++) await hitPinRateLimit('3.3.3.3');
     m.redis.expireNow('rl:pin:3.3.3.3');
     expect((await hitPinRateLimit('3.3.3.3')).allowed).toBe(true);
   });
 
   it('repairs a counter that lost its expiry', async () => {
-    await m.redis.set('rl:pin:4.4.4.4', '50');
+    await m.redis.set('rl:pin:4.4.4.4', '500');
     const result = await hitPinRateLimit('4.4.4.4');
     expect(result).toEqual({ allowed: false, retryAfterSeconds: PIN_RATE_WINDOW_SECONDS });
     expect(await m.redis.ttl('rl:pin:4.4.4.4')).toBe(PIN_RATE_WINDOW_SECONDS);

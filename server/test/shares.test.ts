@@ -77,6 +77,14 @@ describe('POST /api/shares (text)', () => {
     expect(data.deleteAfter).toEqual(data.pinExpiresAt);
   });
 
+  it.each([1, 2, 5, 10, 15])('accepts a TTL of %i minute(s) and uses it for the PIN key', async (ttl) => {
+    const agent = await signedInAgent();
+    const res = await agent.post('/api/shares').send({ ...validBody, ttlMinutes: ttl });
+
+    expect(res.status).toBe(201);
+    expect(await m.redis.ttl(`pin:${res.body.pin}`)).toBe(ttl * 60);
+  });
+
   it('keeps HISTORY shares (no deleteAfter)', async () => {
     const agent = await signedInAgent();
     const res = await agent.post('/api/shares').send({ ...validBody, mode: 'HISTORY', ttlMinutes: 5 });
@@ -98,9 +106,12 @@ describe('POST /api/shares (text)', () => {
   });
 
   it.each([
-    ['ttl below 5', { ttlMinutes: 4 }],
+    ['ttl of 0', { ttlMinutes: 0 }],
+    ['ttl not in the list (3)', { ttlMinutes: 3 }],
+    ['ttl not in the list (7)', { ttlMinutes: 7 }],
     ['ttl above 15', { ttlMinutes: 16 }],
-    ['fractional ttl', { ttlMinutes: 7.5 }],
+    ['fractional ttl', { ttlMinutes: 1.5 }],
+    ['ttl as a string', { ttlMinutes: '5' }],
     ['unknown mode', { mode: 'FOREVER' }],
     ['empty text', { text: '' }],
     ['whitespace-only text', { text: '   \n ' }],

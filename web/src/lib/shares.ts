@@ -1,9 +1,8 @@
 import { apiFetch } from './api.ts';
 
-/** Mirrors the server defaults (MAX_TEXT_KB, PIN_TTL_MIN/MAX_MINUTES); the server is the source of truth. */
+/** Mirrors the server (MAX_TEXT_KB, PIN_TTL_OPTIONS_MINUTES); the server is the source of truth. */
 export const MAX_TEXT_BYTES = 100 * 1024;
-export const TTL_MIN_MINUTES = 5;
-export const TTL_MAX_MINUTES = 15;
+export const TTL_OPTIONS_MINUTES = [1, 2, 5, 10, 15] as const;
 export const DEFAULT_TTL_MINUTES = 10;
 
 export const PIN_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

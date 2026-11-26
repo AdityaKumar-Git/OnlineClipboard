@@ -4,18 +4,12 @@ import { ApiError } from '../lib/api.ts';
 import {
   DEFAULT_TTL_MINUTES,
   MAX_TEXT_BYTES,
-  TTL_MAX_MINUTES,
-  TTL_MIN_MINUTES,
+  TTL_OPTIONS_MINUTES,
   createTextShare,
   textByteLength,
   type CreatedShare,
   type ShareMode,
 } from '../lib/shares.ts';
-
-const TTL_OPTIONS = Array.from(
-  { length: TTL_MAX_MINUTES - TTL_MIN_MINUTES + 1 },
-  (_, i) => TTL_MIN_MINUTES + i,
-);
 
 function formatKb(bytes: number) {
   return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
@@ -110,9 +104,9 @@ export default function Send() {
         <label className="field">
           <span className="field-label">PIN valid for</span>
           <select value={ttlMinutes} onChange={(e) => setTtlMinutes(Number(e.target.value))}>
-            {TTL_OPTIONS.map((m) => (
+            {TTL_OPTIONS_MINUTES.map((m) => (
               <option key={m} value={m}>
-                {m} minutes
+                {m} {m === 1 ? 'minute' : 'minutes'}
               </option>
             ))}
           </select>

@@ -2,7 +2,7 @@
 
 ## 1. What it does
 
-- Signed-in users share **text** or **files** and get a **PIN** that is valid for 5–15 minutes.
+- Signed-in users share **text** or **files** and get a **PIN** that is valid for 1, 2, 5, 10 or 15 minutes.
 - Anyone with the PIN can open the text or download the file on another device.
 - Two share modes:
   - **Temporary:** the PIN expires and the content (DB text or Drive file) is deleted automatically.
@@ -113,9 +113,9 @@ model Share {
 
 | Key | Value | TTL | Purpose |
 |---|---|---|---|
-| `pin:{PIN}` | shareId | 5–15 min | Active PIN → share. Created with `SET NX EX` so active PINs are unique. |
+| `pin:{PIN}` | shareId | 1–15 min | Active PIN → share. Created with `SET NX EX` so active PINs are unique. |
 | `share-pin:{shareId}` | PIN | same | Lets a delete kill the PIN early. |
-| `rl:pin:{ip}` | counter | 10 min | Receive attempts per IP (max `PIN_RATE_LIMIT`, default 10). |
+| `rl:pin:{ip}` | counter | 10 min | Receive attempts per IP (max `PIN_RATE_LIMIT`, default 100). |
 | `gtoken:{userId}` | access token | ~59 min | Cached Google access token. |
 | `sess:{id}` | session | 7 days | Express sessions (`connect-redis`). |
 | `lock:cleanup` | worker id | 55 s | Only one cleanup worker runs at a time. |
@@ -143,7 +143,7 @@ All `/api/*` routes need a session except `/api/receive/*`.
 ### Shares
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/api/shares` | Body: `{ kind: 'text', text, mode, ttlMinutes }` or `{ kind: 'file', driveFileId, mode, ttlMinutes }`. `ttlMinutes` 5–15. For files, the server calls `files.get` to check that the file exists, is in the user's app folder and is under `MAX_FILE_SIZE_MB`, and saves name/mime/size from Drive, not from the client. Returns `{ id, pin, pinExpiresAt }`. |
+| POST | `/api/shares` | Body: `{ kind: 'text', text, mode, ttlMinutes }` or `{ kind: 'file', driveFileId, mode, ttlMinutes }`. `ttlMinutes` is one of 1, 2, 5, 10, 15. For files, the server calls `files.get` to check that the file exists, is in the user's app folder and is under `MAX_FILE_SIZE_MB`, and saves name/mime/size from Drive, not from the client. Returns `{ id, pin, pinExpiresAt }`. |
 | GET | `/api/shares?cursor=` | History: the user's `HISTORY` shares that aren't deleted, newest first, 20 per page |
 | DELETE | `/api/shares/:id` | Owner only. Deletes the Drive file (404 = fine), deletes the PIN keys, sets `status = DELETED`. |
 

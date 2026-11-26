@@ -16,7 +16,7 @@ See `ARCHITECTURE.md` for details.
 
 ## 2. Text sharing
 - [x] `services/pin.ts`: generate PIN, `SET NX EX`, collision retry, `share-pin` key
-- [x] `POST /api/shares` for text (zod validation, ttl 5–15, mode TEMP/HISTORY)
+- [x] `POST /api/shares` for text (zod validation, ttl 1/2/5/10/15, mode TEMP/HISTORY)
 - [x] `GET /api/receive/:pin` for text, with the per-IP rate limit
 - [x] Web: Send page (text box, mode toggle, TTL picker, PIN + countdown), Receive page
 
