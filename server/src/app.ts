@@ -5,6 +5,7 @@ import { healthRouter } from './routes/health.js';
 import { authRouter } from './routes/auth.js';
 import { meRouter } from './routes/me.js';
 import { sharesRouter } from './routes/shares.js';
+import { receiveRouter } from './routes/receive.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { createRedisSessionStore, sessionMiddleware } from './middleware/session.js';
 
@@ -23,6 +24,8 @@ export function createApp(options: AppOptions = {}) {
   app.use(express.json({ limit: `${env.MAX_TEXT_KB * 6 + 16}kb` }));
 
   app.use('/api/health', healthRouter);
+  // No session needed to receive.
+  app.use('/api/receive', receiveRouter);
 
   app.use(sessionMiddleware(options.sessionStore ?? createRedisSessionStore()));
   app.use('/auth', authRouter);
