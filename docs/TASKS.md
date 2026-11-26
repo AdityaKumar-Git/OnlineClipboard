@@ -15,7 +15,7 @@ See `ARCHITECTURE.md` for details.
 - [x] Web: Login page, protected routes, header showing the user
 
 ## 2. Text sharing
-- [ ] `services/pin.ts`: generate PIN, `SET NX EX`, collision retry, `share-pin` key
+- [x] `services/pin.ts`: generate PIN, `SET NX EX`, collision retry, `share-pin` key
 - [ ] `POST /api/shares` for text (zod validation, ttl 5–15, mode TEMP/HISTORY)
 - [ ] `GET /api/receive/:pin` for text, with the per-IP rate limit
 - [ ] Web: Send page (text box, mode toggle, TTL picker, PIN + countdown), Receive page
