@@ -5,7 +5,12 @@ import { z } from 'zod';
 
 // The single .env file lives at the repo root (next to docker-compose.yml).
 const here = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(here, '../../../.env'), quiet: true });
+// Tests never load it: they get fixed fake values from vitest.config.ts instead.
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config({ path: path.resolve(here, '../../../.env'), quiet: true });
+}
+
+const PLACEHOLDER_SECRET = 'change-me-long-random-string';
 
 const optionalString = z
   .string()
@@ -16,15 +21,18 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
-  SESSION_SECRET: optionalString,
+  SESSION_SECRET: z
+    .string()
+    .min(32, 'must be at least 32 characters')
+    .refine((v) => v !== PLACEHOLDER_SECRET, 'still set to the .env.example placeholder'),
 
   DATABASE_URL: z.string().min(1).default('postgresql://clipboard:clipboard@localhost:5432/clipboard'),
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
 
-  // Required from Phase 1/3 onwards; optional until those features exist.
-  GOOGLE_CLIENT_ID: optionalString,
-  GOOGLE_CLIENT_SECRET: optionalString,
-  GOOGLE_REDIRECT_URI: optionalString,
+  GOOGLE_CLIENT_ID: z.string().min(1, 'is required'),
+  GOOGLE_CLIENT_SECRET: z.string().min(1, 'is required'),
+  GOOGLE_REDIRECT_URI: z.string().url(),
+  // Required from Phase 3 (Drive connect) onwards.
   GOOGLE_DRIVE_REDIRECT_URI: optionalString,
   TOKEN_ENC_KEY: optionalString,
   // Empty = production mode (no known refresh-token expiry).

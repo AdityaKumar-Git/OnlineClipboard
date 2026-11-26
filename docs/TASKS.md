@@ -11,8 +11,11 @@ See `ARCHITECTURE.md` for details.
 
 ## 1. Sign-in
 - [ ] Google sign-in (`/auth/google`, callback), user upsert by `googleSub`
+  _(code + tests done; pending manual sign-in: Google currently answers `invalid_client`, check `GOOGLE_CLIENT_ID`)_
 - [ ] Sessions in Redis (`connect-redis`), logout, `GET /api/me`
+  _(code + tests done; session key lands in Redis; pending a real signed-in `/api/me`)_
 - [ ] Web: Login page, protected routes, header showing the user
+  _(built; pending manual check after a real sign-in)_
 
 ## 2. Text sharing
 - [ ] `services/pin.ts`: generate PIN, `SET NX EX`, collision retry, `share-pin` key

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
+import session from 'express-session';
 
 const { queryRaw, ping } = vi.hoisted(() => ({ queryRaw: vi.fn(), ping: vi.fn() }));
 
@@ -19,7 +20,7 @@ describe('GET /api/health', () => {
     queryRaw.mockResolvedValue([{ '?column?': 1 }]);
     ping.mockResolvedValue('PONG');
 
-    const res = await request(createApp()).get('/api/health');
+    const res = await request(createApp({ sessionStore: new session.MemoryStore() })).get('/api/health');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: 'ok', checks: { db: 'ok', redis: 'ok' } });
@@ -29,7 +30,7 @@ describe('GET /api/health', () => {
     queryRaw.mockRejectedValue(new Error('connection refused'));
     ping.mockResolvedValue('PONG');
 
-    const res = await request(createApp()).get('/api/health');
+    const res = await request(createApp({ sessionStore: new session.MemoryStore() })).get('/api/health');
 
     expect(res.status).toBe(503);
     expect(res.body.error).toEqual({ code: 'UNHEALTHY', message: 'Unavailable: db' });
@@ -40,7 +41,7 @@ describe('GET /api/health', () => {
     queryRaw.mockResolvedValue([]);
     ping.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    const res = await request(createApp()).get('/api/health');
+    const res = await request(createApp({ sessionStore: new session.MemoryStore() })).get('/api/health');
 
     expect(res.status).toBe(503);
     expect(res.body.checks).toEqual({ db: 'ok', redis: 'error' });
@@ -49,7 +50,7 @@ describe('GET /api/health', () => {
 
 describe('unknown routes', () => {
   it('return 404 with the error shape', async () => {
-    const res = await request(createApp()).get('/api/nope');
+    const res = await request(createApp({ sessionStore: new session.MemoryStore() })).get('/api/nope');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
   });

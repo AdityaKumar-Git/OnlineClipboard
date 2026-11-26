@@ -5,6 +5,8 @@
   --border: #e3e3e3;
   --ok: #1f7a3d;
   --err: #b3261e;
+  --accent: #1a56db;
+  --accent-fg: #ffffff;
   font-family:
     system-ui,
     -apple-system,
@@ -23,6 +25,8 @@
     --border: #2c2c2c;
     --ok: #6fcf8f;
     --err: #ff8a80;
+    --accent: #8ab4f8;
+    --accent-fg: #0b1a33;
   }
 }
 
@@ -65,5 +69,63 @@ body {
 }
 
 .status-error {
+  color: var(--err);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.button {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.alert {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid currentColor;
+}
+
+.alert-error {
   color: var(--err);
 }
