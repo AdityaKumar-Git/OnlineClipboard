@@ -229,6 +229,46 @@ describe('GET /auth/google/drive/callback', () => {
     expect(user().driveRefreshTokenEnc).toBeNull();
   });
 
+  it('reports drive_api_disabled when the Drive API is off in the Cloud project', async () => {
+    m.filesCreate.mockRejectedValue(
+      Object.assign(
+        new Error('Google Drive API has not been used in project 123 before or it is disabled.'),
+        {
+          status: 403,
+          response: { status: 403, data: { error: { errors: [{ reason: 'accessNotConfigured' }] } } },
+        },
+      ),
+    );
+    const agent = await signedInAgent();
+
+    expect(await connect(agent)).toBe(`${WEB}/?drive_error=drive_api_disabled`);
+    expect(user().driveConnected).toBe(false);
+    expect(console.error).toHaveBeenCalledWith(
+      '[auth] drive connect failed (drive_api_disabled):',
+      expect.stringContaining('status=503'),
+    );
+  });
+
+  it('logs Google status and reason (never the request) for unexpected Google errors', async () => {
+    m.exchangeDriveCode.mockReset();
+    const agent = await signedInAgent();
+    const err = Object.assign(new Error('invalid_client'), {
+      status: 401,
+      config: { data: 'client_secret=SHOULD-NOT-BE-LOGGED&code=drive-code' },
+      response: { status: 401, data: { error: 'invalid_client', error_description: 'Unauthorized' } },
+    });
+    m.exchangeDriveCode.mockRejectedValueOnce(err);
+    const start = await agent.get('/auth/google/drive');
+    const state = new URL(start.headers.location!).searchParams.get('state')!;
+
+    const cb = await agent.get('/auth/google/drive/callback').query({ code: 'drive-code', state });
+
+    expect(cb.headers.location).toBe(`${WEB}/?drive_error=connect_failed`);
+    const logged = vi.mocked(console.error).mock.calls.flat().join(' ');
+    expect(logged).toContain('status=401 reason=invalid_client message=invalid_client');
+    expect(logged).not.toContain('SHOULD-NOT-BE-LOGGED');
+  });
+
   it('rejects a grant without drive.file (user unticked the Drive box)', async () => {
     const agent = await signedInAgent();
     const location = await connect(agent, grant({ scopes: ['openid'] }));

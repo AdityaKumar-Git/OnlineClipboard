@@ -1,6 +1,6 @@
 import { env } from '../config/env.js';
 import { AppError } from '../lib/errors.js';
-import { driveFor, googleErrorStatus } from '../lib/google.js';
+import { driveFor, googleErrorStatus, isDriveApiDisabled } from '../lib/google.js';
 import { prisma } from '../lib/prisma.js';
 import { decrypt, encrypt } from './crypto.js';
 import { DRIVE_FILE_SCOPE, revokeGoogleToken, type DriveGrant } from './googleAuth.js';
@@ -15,6 +15,21 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * gone (deleted or trashed). Folders are tracked by id, never looked up by name.
  */
 export async function ensureAppFolder(accessToken: string, folderId: string | null): Promise<string> {
+  try {
+    return await findOrCreateAppFolder(accessToken, folderId);
+  } catch (err) {
+    if (isDriveApiDisabled(err)) {
+      throw new AppError(
+        503,
+        'DRIVE_API_DISABLED',
+        'The Google Drive API is not enabled for this app’s Google Cloud project',
+      );
+    }
+    throw err;
+  }
+}
+
+async function findOrCreateAppFolder(accessToken: string, folderId: string | null): Promise<string> {
   const drive = driveFor(accessToken);
 
   if (folderId) {

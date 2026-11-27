@@ -12,6 +12,7 @@ import {
 import { connectDrive } from '../services/drive.js';
 import { AppError } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
+import { describeGoogleError } from '../lib/google.js';
 import { upsertUserFromGoogle } from '../services/users.js';
 import { SESSION_COOKIE, destroySession, regenerateSession, saveSession } from '../middleware/session.js';
 
@@ -58,7 +59,7 @@ authRouter.get('/google/callback', async (req, res) => {
     await saveSession(req);
     return res.redirect(webRedirect('/'));
   } catch (err) {
-    console.error('[auth] sign-in failed:', err instanceof Error ? err.message : 'unknown error');
+    console.error('[auth] sign-in failed:', describeGoogleError(err));
     return res.redirect(webRedirect('/login', 'signin_failed'));
   }
 });
@@ -108,8 +109,8 @@ authRouter.get('/google/drive/callback', async (req, res) => {
     return res.redirect(driveRedirect());
   } catch (err) {
     const code = err instanceof AppError ? err.code.toLowerCase() : 'connect_failed';
-    // Message only: googleapis errors can carry token requests.
-    console.error('[auth] drive connect failed:', err instanceof Error ? err.message : 'unknown error');
+    // Status/reason/message only: googleapis errors carry the request (and tokens) in `config`.
+    console.error(`[auth] drive connect failed (${code}):`, describeGoogleError(err));
     await saveSession(req).catch(() => {});
     return res.redirect(driveRedirect(code));
   }

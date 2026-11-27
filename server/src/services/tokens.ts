@@ -1,4 +1,5 @@
 import { AppError } from '../lib/errors.js';
+import { describeGoogleError } from '../lib/google.js';
 import { prisma } from '../lib/prisma.js';
 import { redis } from '../lib/redis.js';
 import { decrypt } from './crypto.js';
@@ -54,7 +55,7 @@ export async function getAccessToken(userId: string): Promise<string> {
     }
     if (err instanceof AppError) throw err;
     // Never log the error object: it can carry the token request.
-    console.error('[tokens] access token refresh failed:', err instanceof Error ? err.message : 'unknown');
+    console.error('[tokens] access token refresh failed:', describeGoogleError(err));
     throw new AppError(502, 'GOOGLE_UNAVAILABLE', 'Could not reach Google Drive. Please try again.');
   }
 
