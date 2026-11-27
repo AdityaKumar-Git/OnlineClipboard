@@ -1,6 +1,6 @@
 import { env } from '../config/env.js';
 import { AppError } from '../lib/errors.js';
-import { driveFor, googleErrorStatus, isDriveApiDisabled } from '../lib/google.js';
+import { describeGoogleError, driveFor, googleErrorStatus, isDriveApiDisabled } from '../lib/google.js';
 import { prisma } from '../lib/prisma.js';
 import { decrypt, encrypt } from './crypto.js';
 import { DRIVE_FILE_SCOPE, revokeGoogleToken, type DriveGrant } from './googleAuth.js';
@@ -18,6 +18,8 @@ export async function ensureAppFolder(accessToken: string, folderId: string | nu
   try {
     return await findOrCreateAppFolder(accessToken, folderId);
   } catch (err) {
+    // Google's own wording (it names the Cloud project). Safe summary only, never the error object.
+    console.error('[drive] app folder check/create failed:', describeGoogleError(err));
     if (isDriveApiDisabled(err)) {
       throw new AppError(
         503,
